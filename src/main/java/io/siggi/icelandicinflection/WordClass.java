@@ -13,17 +13,17 @@ public enum WordClass implements Predicate<WordI>, InflectionTagAttribute {
      */
     NOUN("noun", "nafnorð", "kk", "kvk", "hk"),
     /**
+     * Pronouns that don't fit in the more specific categories - sá
+     */
+    PRONOUN("pronoun", "fornafn", NOUN, "fn"),
+    /**
      * Reflexive pronouns - sig, sér, sín
      */
-    REFLEXIVE_PRONOUN("reflexive pronoun", "afturbeygt fornafn", "afn"),
+    REFLEXIVE_PRONOUN("reflexive pronoun", "afturbeygt fornafn", PRONOUN, "afn"),
     /**
      * Personal pronouns - hann, hún, það
      */
-    PERSONAL_PRONOUN("personal pronoun", "persónufornafn", "pfn"),
-    /**
-     * Other pronouns - sá
-     */
-    OTHER_PRONOUN("pronoun", "fornafn", "fn"),
+    PERSONAL_PRONOUN("personal pronoun", "persónufornafn", PRONOUN, "pfn"),
     /**
      * Adjectives
      */
@@ -67,12 +67,19 @@ public enum WordClass implements Predicate<WordI>, InflectionTagAttribute {
 
     private final String englishName;
     private final String icelandicName;
+    private final WordClass superclass;
     private final String[] codes;
 
-    private WordClass(String englishName, String icelandicName,
+    WordClass(String englishName, String icelandicName,
+                      String... codes) {
+        this(englishName, icelandicName, null, codes);
+    }
+
+    WordClass(String englishName, String icelandicName, WordClass superclass,
                       String... codes) {
         this.englishName = englishName;
         this.icelandicName = icelandicName;
+        this.superclass = superclass;
         this.codes = codes;
     }
 
@@ -82,6 +89,10 @@ public enum WordClass implements Predicate<WordI>, InflectionTagAttribute {
 
     public String getIcelandicName() {
         return icelandicName;
+    }
+
+    public WordClass getSuperclass() {
+        return superclass;
     }
 
     public String[] getCodes() {
@@ -109,11 +120,24 @@ public enum WordClass implements Predicate<WordI>, InflectionTagAttribute {
 
     @Override
     public boolean test(WordI word) {
-        return this == of(word);
+        return test(of(word));
     }
 
     @Override
     public boolean test(InflectionTagI tag) {
-        return this == of(tag);
+        return test(of(tag));
+    }
+
+    /**
+     * Test if the specified word class is the same as this word class or a subclass of this word class.
+     *
+     * @param wordClass the word class to test
+     * @return true if the word class is the same as this word class or a subclass of this word class.
+     */
+    public boolean test(WordClass wordClass) {
+        if (wordClass == null) return false;
+        if (wordClass == this) return true;
+        if (wordClass.superclass != null) return test(wordClass.superclass);
+        return false;
     }
 }
